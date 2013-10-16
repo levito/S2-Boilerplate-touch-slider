@@ -1,0 +1,291 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>Slider</title>
+<style type="text/css">
+body {
+	margin: 0;
+	font: normal normal normal 14px/1.5 sans-serif;
+}
+
+.slider {
+	position: relative;
+	overflow: hidden;
+	width: 80%;
+	margin: 1em auto;
+}
+.slider > ul {
+	position: relative;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	/*-webkit-transform: translateZ(0);
+	transform: translateZ(0);*/
+}
+.slider > ul:after {
+	content: " ";
+	display: table;
+	clear: both;
+}
+
+.slider > ul > li {
+	position: relative;
+	float: left;
+}
+
+.slider > ul > .next:first-child {
+	left: 100%;
+}
+.slider > ul > .prev.last-child {
+	right: 100%;
+}
+.slider > ul > .target:first-child,
+.slider > ul > .target.last-child {
+	left: 0;
+	right: 0;
+}
+
+.slider > ul > li > img {
+	display: block;
+	width: 100%;
+}
+
+.slider .nav {
+	position: relative;
+	z-index: 1;
+	background: #fff;
+	text-align: center;
+}
+.slider .nav a {
+	display: inline-block;
+	margin: 1em .5em;
+	width: 2em;
+	line-height: 2em;
+	background: #999;
+	color: #fff;
+	text-decoration: none;
+	text-align: center;
+	border-radius: 999px;
+	-webkit-transition: all .2s;
+	transition: all .2s;
+}
+.slider .nav a:hover {
+	background: #666;
+}
+.slider .nav a.active {
+	background: #000;
+}
+
+.slider h2 {
+	position: absolute;
+	top: 30px;
+	left: 30px;
+	margin: 0;
+}
+.slider1 .nav a {
+	width: auto;
+	padding: 0 .5em;
+}
+</style>
+</head>
+
+<body>
+<div class="slider">
+	<ul>
+		<li>
+			<img src="http://dummyimage.com/800x400&amp;text=Slide+1">
+		</li>
+		<li>
+			<img src="http://dummyimage.com/800x400&amp;text=Slide+2">
+		</li>
+		<li class="current">
+			<img src="http://dummyimage.com/800x400&amp;text=Slide+3">
+		</li>
+		<li>
+			<img src="http://dummyimage.com/800x400&amp;text=Slide+4">
+		</li>
+		<li>
+			<img src="http://dummyimage.com/800x400&amp;text=Slide+5">
+		</li>
+		<li>
+			<img src="http://dummyimage.com/800x400&amp;text=Slide+6">
+		</li>
+		<li>
+			<img src="http://dummyimage.com/800x400&amp;text=Slide+7">
+		</li>
+	</ul>
+</div>
+
+<script src="modernizr-2.6.2.js"></script>
+<script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+<script>
+function Slider($sliderContainer) {
+	var self = this;
+	var $sliderContent = $sliderContainer.find(">ul");
+	var $slides = $sliderContent.find(">li");
+	var $pages = $();
+	var slidesCount = $slides.length;
+	var speed = 800;
+	var flickTimeout = 400;
+	var swipeTreshold = 10;
+	var transitioning = false;
+	var transition = Modernizr.prefixed("transition");
+	var transitionend = {
+		"WebkitTransition" : "webkitTransitionEnd",
+		"MozTransition"    : "transitionend",
+		"OTransition"      : "oTransitionEnd",
+		"msTransition"     : "MSTransitionEnd",
+		"transition"       : "transitionend",
+		"false"            : "transitionend"
+	}[transition];
+	var sliderWidth, currentIndex, startX, startY, deltaX, deltaY, isFlick, isSwipe, swiping, transitioning;
+
+	if (slidesCount < 2) return;
+
+	function init() {
+		var $nav = $("<div class='nav'/>");
+		var $pager = $("<span/>").appendTo($nav);
+
+		currentIndex = ($slides.filter(".current").index() + 1 || 1) -1;
+		$sliderContent.width(100 * slidesCount + "%");
+		$slides.width(100 / slidesCount + "%");
+
+		$slides.each(function(i) {
+			$("<a href='#'>" + (i+1) + "</a>").on("click", function(e) {
+				e.preventDefault();
+				go(i);
+			}).appendTo($pager);
+		});
+		$("<a href='#' class='back'><</a>").on("click", function(e) {
+			e.preventDefault();
+			back();
+		}).prependTo($nav);
+		$("<a href='#' class='forth'>></a>").on("click", function(e) {
+			e.preventDefault();
+			forth();
+		}).appendTo($nav);
+
+		$pages = $pager.find(">a");
+		$pages.eq(currentIndex).addClass("active");
+		arrange($slides.eq(currentIndex));
+		moveBy(0, true);
+
+		$sliderContainer.append($nav);
+
+		$(window).on("resize", function() {
+			sliderWidth = $sliderContainer.width();
+		}).trigger("resize");
+		$sliderContent.on("touchstart", touchstart);
+	}
+
+	function touchstart(e) {
+		if (transitioning) return false;
+		e.preventDefault(); // remove later
+		if (e.originalEvent.touches.length == 1) {
+			startX = e.originalEvent.touches[0].pageX;
+			startY = e.originalEvent.touches[0].pageY;
+			$sliderContent.on("touchmove", touchmove).one("touchend", touchend);
+			isFlick = true;
+			window.setTimeout(function(){
+				isFlick = false;
+			}, flickTimeout);
+		}
+	}
+
+	function touchmove(e) {
+		var treshold = isFlick ? swipeTreshold : sliderWidth / 2;
+		deltaX = startX - e.originalEvent.touches[0].pageX;
+		deltaY = startY - e.originalEvent.touches[0].pageY;
+		if (Math.abs(deltaX) > Math.max(treshold, Math.abs(deltaY))) {
+			e.preventDefault();
+			e.stopPropagation();
+			isSwipe = swiping = true;
+		} else {
+			isSwipe = false;
+		}
+		if (swiping) {
+			moveBy(deltaX / sliderWidth, true)
+		}
+	}
+
+	function touchend(e) {
+		if (isSwipe) {
+			deltaX < 0 ? back() : forth();
+		} else {
+			// if swipe treshold is not reached, transition back if X != 0, but don't turn transition on if we landed directly on X == 0
+			moveBy(0, !deltaX);
+		}
+		isSwipe = swiping = false;
+		$sliderContent.off("touchmove", touchmove).one(transitionend, function() {
+			moveBy(0, true);
+		});
+	}
+
+	function moveBy(direction, instantly) {
+		var deltaX = -(direction + currentIndex) * 100;
+		var s = instantly ? 0 : speed;
+		if (!!transition) {
+			$sliderContent.css({
+				left: deltaX + "%",
+				transition: ["all ", s, "ms"].join("")
+			});
+		} else {
+			$sliderContent.animate({
+				left: deltaX + "%"
+			}, s, function() {
+				s && $sliderContent.trigger(transitionend);
+			})
+		}
+	}
+
+	function go(targetIndex, direction) {
+		if (typeof targetIndex != "number") return;
+		transitioning = true;
+		var targetIndex = targetIndex % slidesCount;
+		var $current = $slides.filter(".current");
+		currentIndex = $current.index();
+		if (!direction) {
+			$slides.eq(targetIndex).addClass("target");
+		}
+		direction = direction || targetIndex - currentIndex;
+
+		moveBy(direction);
+
+		$sliderContent.one(transitionend, function() {
+			arrange($slides.eq(targetIndex));
+			transitioning = false;
+			if ((direction == 1 && targetIndex == 0)
+				|| (direction == -1 && targetIndex == slidesCount - 1)) {
+				moveBy(0, true);
+			}
+		});
+
+		$pages.length && $pages.removeClass("active").eq(targetIndex).addClass("active");
+	}
+
+	function forth() {
+		go($slides.filter(".next").index(), 1);
+	}
+
+	function back() {
+		go($slides.filter(".prev").index(), -1);
+	}
+
+	function arrange($current) {
+		var $prevSlide = $current.prev().length ? $current.prev() : $slides.last();
+		var $nextSlide = $current.next().length ? $current.next() : $slides.first();
+		currentIndex = $current.index();
+		$slides.removeClass("current prev next target last-child");
+		$current.addClass("current");
+		$prevSlide.addClass("prev")
+			.filter(":last-child").addClass("last-child"); // for IE7 support only
+		$nextSlide.addClass("next");
+	}
+
+	init();
+}
+
+var slider = new Slider($(".slider"));
+</script>
+</body>
