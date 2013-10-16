@@ -20,8 +20,6 @@ body {
 	list-style: none;
 	margin: 0;
 	padding: 0;
-	/*-webkit-transform: translateZ(0);
-	transform: translateZ(0);*/
 }
 .slider > ul:after {
 	content: " ";
@@ -57,9 +55,11 @@ body {
 	background: #fff;
 	text-align: center;
 }
-.slider .nav a {
+.slider .nav button {
 	display: inline-block;
 	margin: 1em .5em;
+	padding: 0;
+	border: none;
 	width: 2em;
 	line-height: 2em;
 	background: #999;
@@ -67,13 +67,14 @@ body {
 	text-decoration: none;
 	text-align: center;
 	border-radius: 999px;
+	cursor: pointer;
 	-webkit-transition: all .2s;
 	transition: all .2s;
 }
-.slider .nav a:hover {
+.slider .nav button:hover {
 	background: #666;
 }
-.slider .nav a.active {
+.slider .nav button.active {
 	background: #000;
 }
 
@@ -105,7 +106,7 @@ body {
 		<li>
 			<img src="http://dummyimage.com/800x400/bbb/000&amp;text=Slide+4">
 		</li>
-		<!-- <li>
+		<li>
 			<img src="http://dummyimage.com/800x400&amp;text=Slide+5">
 		</li>
 		<li>
@@ -113,7 +114,7 @@ body {
 		</li>
 		<li>
 			<img src="http://dummyimage.com/800x400&amp;text=Slide+7">
-		</li> -->
+		</li>
 	</ul>
 </div>
 
@@ -152,21 +153,21 @@ function Slider($sliderContainer) {
 		$slides.width(100 / slidesCount + "%");
 
 		$slides.each(function(i) {
-			$("<a href='#'>" + (i+1) + "</a>").on("click", function(e) {
+			$("<button>" + (i+1) + "</button>").on("click", function(e) {
 				e.preventDefault();
 				go(i);
 			}).appendTo($pager);
 		});
-		$("<a href='#' class='back'><</a>").on("click", function(e) {
+		$("<button class='back'>&lt;</button>").on("click", function(e) {
 			e.preventDefault();
 			back();
 		}).prependTo($nav);
-		$("<a href='#' class='forth'>></a>").on("click", function(e) {
+		$("<button class='forth'>&gt;</button>").on("click", function(e) {
 			e.preventDefault();
 			forth();
 		}).appendTo($nav);
 
-		$pages = $pager.find(">a");
+		$pages = $pager.find(">button");
 		$pages.eq(currentIndex).addClass("active");
 		arrange($slides.eq(currentIndex));
 		moveBy(0, true);
@@ -185,13 +186,13 @@ function Slider($sliderContainer) {
 
 	function touchstart(e) {
 		if (transitioning) return false;
-		e.preventDefault(); // remove later
+		e.preventDefault(); // for testing on desktop, remove later
 		if (e.originalEvent.touches.length == 1) {
 			startX = e.originalEvent.touches[0].pageX;
 			startY = e.originalEvent.touches[0].pageY;
 			$sliderContent.on("touchmove", touchmove).one("touchend", touchend);
 			isFlick = true;
-			window.setTimeout(function(){
+			window.setTimeout(function() {
 				isFlick = false;
 			}, flickTimeout);
 		}
@@ -245,8 +246,8 @@ function Slider($sliderContainer) {
 		if (typeof targetIndex != "number") return;
 		transitioning = true;
 		var targetIndex = targetIndex % slidesCount;
-		var $current = $slides.filter(".current");
-		currentIndex = $current.index();
+		var $currentSlide = $slides.filter(".current");
+		currentIndex = $currentSlide.index();
 		if (!direction) {
 			$slides.eq(targetIndex).addClass("target");
 		}
@@ -274,12 +275,12 @@ function Slider($sliderContainer) {
 		go($slides.filter(".prev").index(), -1);
 	}
 
-	function arrange($current) {
-		var $prevSlide = $current.prev().length ? $current.prev() : $slides.last();
-		var $nextSlide = $current.next().length ? $current.next() : $slides.first();
-		currentIndex = $current.index();
+	function arrange($currentSlide) {
+		var $prevSlide = $currentSlide.prev().length ? $currentSlide.prev() : $slides.last();
+		var $nextSlide = $currentSlide.next().length ? $currentSlide.next() : $slides.first();
+		currentIndex = $currentSlide.index();
 		$slides.removeClass("current prev next target last-child");
-		$current.addClass("current");
+		$currentSlide.addClass("current");
 		$prevSlide.addClass("prev")
 			.filter(":last-child").addClass("last-child"); // for IE7 support only
 		$nextSlide.addClass("next");
