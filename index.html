@@ -180,8 +180,8 @@ function Slider($sliderContainer) {
 		$sliderContent.on("touchstart", touchstart);
 	}
 
-	function isSwipe() {
-		return Math.abs(deltaX) > Math.max(isFlick ? swipeTreshold : sliderWidth / 2, Math.abs(deltaY));
+	function isSwipe(treshold) {
+		return Math.abs(deltaX) > Math.max(treshold, Math.abs(deltaY));
 	}
 
 	function touchstart(e) {
@@ -201,7 +201,7 @@ function Slider($sliderContainer) {
 	function touchmove(e) {
 		deltaX = startX - e.originalEvent.touches[0].pageX;
 		deltaY = startY - e.originalEvent.touches[0].pageY;
-		if (isSwipe()) {
+		if (isSwipe(swipeTreshold)) {
 			e.preventDefault();
 			e.stopPropagation();
 			swiping = true;
@@ -212,7 +212,8 @@ function Slider($sliderContainer) {
 	}
 
 	function touchend(e) {
-		if (isSwipe()) {
+		var treshold = isFlick ? swipeTreshold : sliderWidth / 2;
+		if (isSwipe(treshold)) {
 			deltaX < 0 ? back() : forth();
 		} else {
 			// if swipe treshold is not reached, transition back if X != 0, but don't turn transition on if we landed directly on X == 0
