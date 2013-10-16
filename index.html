@@ -94,18 +94,18 @@ body {
 <div class="slider">
 	<ul>
 		<li>
-			<img src="http://dummyimage.com/800x400&amp;text=Slide+1">
+			<img src="http://dummyimage.com/800x400/eee/000&amp;text=Slide+1">
 		</li>
 		<li>
-			<img src="http://dummyimage.com/800x400&amp;text=Slide+2">
+			<img src="http://dummyimage.com/800x400/ddd/000&amp;text=Slide+2">
 		</li>
 		<li class="current">
-			<img src="http://dummyimage.com/800x400&amp;text=Slide+3">
+			<img src="http://dummyimage.com/800x400/ccc/000&amp;text=Slide+3">
 		</li>
 		<li>
-			<img src="http://dummyimage.com/800x400&amp;text=Slide+4">
+			<img src="http://dummyimage.com/800x400/bbb/000&amp;text=Slide+4">
 		</li>
-		<li>
+		<!-- <li>
 			<img src="http://dummyimage.com/800x400&amp;text=Slide+5">
 		</li>
 		<li>
@@ -113,7 +113,7 @@ body {
 		</li>
 		<li>
 			<img src="http://dummyimage.com/800x400&amp;text=Slide+7">
-		</li>
+		</li> -->
 	</ul>
 </div>
 
@@ -126,8 +126,8 @@ function Slider($sliderContainer) {
 	var $slides = $sliderContent.find(">li");
 	var $pages = $();
 	var slidesCount = $slides.length;
-	var speed = 800;
-	var flickTimeout = 400;
+	var speed = 500;
+	var flickTimeout = 250;
 	var swipeTreshold = 10;
 	var transitioning = false;
 	var transition = Modernizr.prefixed("transition");
@@ -139,7 +139,7 @@ function Slider($sliderContainer) {
 		"transition"       : "transitionend",
 		"false"            : "transitionend"
 	}[transition];
-	var sliderWidth, currentIndex, startX, startY, deltaX, deltaY, isFlick, isSwipe, swiping, transitioning;
+	var sliderWidth, currentIndex, startX, startY, deltaX, deltaY, isFlick, swiping, transitioning;
 
 	if (slidesCount < 2) return;
 
@@ -179,6 +179,10 @@ function Slider($sliderContainer) {
 		$sliderContent.on("touchstart", touchstart);
 	}
 
+	function isSwipe(treshold) {
+		return Math.abs(deltaX) > Math.max(treshold, Math.abs(deltaY));
+	}
+
 	function touchstart(e) {
 		if (transitioning) return false;
 		e.preventDefault(); // remove later
@@ -194,15 +198,12 @@ function Slider($sliderContainer) {
 	}
 
 	function touchmove(e) {
-		var treshold = isFlick ? swipeTreshold : sliderWidth / 2;
 		deltaX = startX - e.originalEvent.touches[0].pageX;
 		deltaY = startY - e.originalEvent.touches[0].pageY;
-		if (Math.abs(deltaX) > Math.max(treshold, Math.abs(deltaY))) {
+		if (isSwipe(swipeTreshold)) {
 			e.preventDefault();
 			e.stopPropagation();
-			isSwipe = swiping = true;
-		} else {
-			isSwipe = false;
+			swiping = true;
 		}
 		if (swiping) {
 			moveBy(deltaX / sliderWidth, true)
@@ -210,13 +211,14 @@ function Slider($sliderContainer) {
 	}
 
 	function touchend(e) {
-		if (isSwipe) {
+		var treshold = isFlick ? swipeTreshold : sliderWidth / 2;
+		if (isSwipe(treshold)) {
 			deltaX < 0 ? back() : forth();
 		} else {
 			// if swipe treshold is not reached, transition back if X != 0, but don't turn transition on if we landed directly on X == 0
 			moveBy(0, !deltaX);
 		}
-		isSwipe = swiping = false;
+		swiping = false;
 		$sliderContent.off("touchmove", touchmove).one(transitionend, function() {
 			moveBy(0, true);
 		});
