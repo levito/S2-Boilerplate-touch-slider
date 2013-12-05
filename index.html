@@ -1,5 +1,5 @@
 <!doctype html>
-<html>
+<html class="no-js">
 <head>
 <meta charset="utf-8"/>
 <title>Slider</title>
@@ -11,25 +11,32 @@ body {
 
 .slider {
 	position: relative;
-	overflow: hidden;
+	overflow: auto;
 	width: 80%;
 	margin: 1em auto;
+}
+.js .slider {
+	overflow: hidden;
 }
 .slider > ul {
 	position: relative;
 	list-style: none;
 	margin: 0;
 	padding: 0;
-}
-.slider > ul:after {
-	content: " ";
-	display: table;
-	clear: both;
+	font-size: 0;
+	word-spacing: -.3em;
+	white-space: nowrap;
 }
 
 .slider > ul > li {
 	position: relative;
-	float: left;
+	display: inline-block;
+	*display: inline;
+	*zoom: 1;
+	vertical-align: top;
+	font-size: 14px;
+	word-spacing: 0;
+	white-space: normal;
 }
 
 .slider > ul > .next:first-child {
@@ -187,6 +194,7 @@ function Slider($sliderContainer) {
 	function touchstart(e) {
 		if (transitioning) return false;
 		e.preventDefault(); // for testing on desktop, remove later
+		deltaX = deltaY = 0;
 		if (e.originalEvent.touches.length == 1) {
 			startX = e.originalEvent.touches[0].pageX;
 			startY = e.originalEvent.touches[0].pageY;
