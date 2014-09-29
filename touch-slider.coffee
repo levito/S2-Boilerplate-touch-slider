@@ -1,4 +1,4 @@
-ume.widget("ume.stage_slider", ($win, $doc, ns) ->
+($win, $doc) ->
   class StageSlider
     constructor: (el) ->
       @$sliderContainer = $(el)
@@ -160,4 +160,4 @@ ume.widget("ume.stage_slider", ($win, $doc, ns) ->
       self.instances.push(new StageSlider(this))
 
   @initialize()
-)
+)($(window), $(document))
